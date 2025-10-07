@@ -1,1 +1,209 @@
-この文字が見えていれば準備は完了しています。続きは当日の説明をお待ちください。
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>ゴリラ実験室 〜覇気の目覚め〜</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #111;
+      color: #0f0;
+      text-align: center;
+      padding: 2em;
+      background-image: radial-gradient(#222, #000);
+    }
+
+    .box {
+      max-width: 600px;
+      margin: auto;
+      background: rgba(0,0,0,0.8);
+      padding: 2em;
+      border-radius: 15px;
+      box-shadow: 0 0 10px #0f0;
+    }
+
+    .question {
+      font-size: 1.3em;
+      margin: 1em 0;
+    }
+
+    button {
+      background: #0f0;
+      color: #000;
+      border: none;
+      padding: 1em 2em;
+      font-size: 1em;
+      margin: 1em;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    #fireworksCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 999;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="fireworksCanvas"></canvas>
+
+  <div class="box" id="app">
+    <h1>🧪 ゴリラ実験室</h1>
+    <p class="question" id="text">目を覚ますと、そこは理科実験室だった。ゴリラのあなたは……。</p>
+    <div id="buttons"></div>
+  </div>
+
+  <script>
+    const scenes = [
+      {
+        text: "不気味な空気。実験室にあるボタンを押しますか？",
+        choices: [
+          { text: "押す", next: 1 },
+          { text: "無視する", next: 2 }
+        ]
+      },
+      {
+        text: "電気ショック！脳に衝撃が走る。記憶が……戻る？",
+        choices: [
+          { text: "もっと衝撃を求める", next: 3 },
+          { text: "やめて眠る", next: 4 }
+        ]
+      },
+      {
+        text: "部屋が暗くなり、不気味な影が近づいてくる……。",
+        choices: [
+          { text: "叫ぶ", next: "bad" },
+          { text: "目を閉じる", next: "bad" }
+        ]
+      },
+      {
+        text: "体から黒いオーラが噴き出す……これは『覇気』！？",
+        choices: [
+          { text: "解放する", next: "good" },
+          { text: "抑える", next: "bad" }
+        ]
+      },
+      {
+        text: "眠ってしまった……。もう何もわからない。",
+        choices: [
+          { text: "Zzz...", next: "bad" }
+        ]
+      },
+      {
+        text: "？？？",
+        choices: [
+          { text: "終了", next: "bad" }
+        ]
+      }
+    ];
+
+    const endings = {
+      good: {
+        text: "あなたは覇気を覚醒させたゴリラとなり、世界を救った！🎉",
+        fireworks: true
+      },
+      bad: {
+        text: "……実験室に響く笑い声と共に、あなたの意識は闇に消えた。👻",
+        fireworks: false
+      }
+    };
+
+    let currentScene = 0;
+
+    function renderScene() {
+      const app = document.getElementById("app");
+      const scene = scenes[currentScene];
+      if (!scene) return;
+
+      document.getElementById("text").textContent = scene.text;
+      const buttons = document.getElementById("buttons");
+      buttons.innerHTML = "";
+
+      scene.choices.forEach(choice => {
+        const btn = document.createElement("button");
+        btn.textContent = choice.text;
+        btn.onclick = () => {
+          if (choice.next === "good" || choice.next === "bad") {
+            showEnding(choice.next);
+          } else {
+            currentScene = choice.next;
+            renderScene();
+          }
+        };
+        buttons.appendChild(btn);
+      });
+    }
+
+    function showEnding(type) {
+      const ending = endings[type];
+      document.getElementById("text").textContent = ending.text;
+      document.getElementById("buttons").innerHTML = `<button onclick="location.reload()">もう一度</button>`;
+
+      if (ending.fireworks) {
+        launchFireworks();
+      }
+    }
+
+    renderScene();
+
+    // 花火演出
+    function launchFireworks() {
+      const canvas = document.getElementById("fireworksCanvas");
+      const ctx = canvas.getContext("2d");
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      const particles = [];
+
+      function createFirework() {
+        const x = Math.random() * canvas.width;
+        const y = Math.random() * canvas.height / 2;
+        const count = 100;
+        for (let i = 0; i < count; i++) {
+          const angle = (Math.PI * 2 * i) / count;
+          const speed = Math.random() * 3 + 2;
+          particles.push({
+            x,
+            y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            alpha: 1,
+            color: `hsl(${Math.random() * 360}, 100%, 60%)`
+          });
+        }
+      }
+
+      function update() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach((p, i) => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.alpha -= 0.01;
+          if (p.alpha <= 0) particles.splice(i, 1);
+        });
+
+        particles.forEach(p => {
+          ctx.globalAlpha = p.alpha;
+          ctx.fillStyle = p.color;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        ctx.globalAlpha = 1;
+        if (particles.length < 10) createFirework();
+
+        requestAnimationFrame(update);
+      }
+
+      createFirework();
+      update();
+    }
+  </script>
+</body>
+</html>
